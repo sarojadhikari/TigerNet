@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <script type = "application/x-javascript" src = "./js/game.js"></script>
+    <link href="styles.css" rel="stylesheet" media="all" />
+    <script type ="text/javascript" src = "./js/ai.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js"></script>
+
+  </head>
+        
+  <body>
+
+  <tbody>
+        <tr>
+          <canvas id="canvas" width="480" height="480" onmousedown="clickBoard()" onmouseup="mouseup()"></canvas>                   
+          <td>
+              <tbody>
+                <tr><td><h2>Baghchal</h2></td></tr>
+                <tr><td>
+                <button id = "newGame1" onclick = "game(2)">New Game</button>
+                </td></tr>
+                <br>
+                <tr><td>Goats Onhand:<input type="text" id="onhand" value="20"></input></td></tr>
+                <br>
+                <tr><td>Goats Eaten:<input type="text" id="eaten" value="0"></input></td></tr>                                                   
+
+              </tbody>
+          </td>
+        </tr>
+      </tbody>
+
+    <script>
+      document.addEventListener("mousemove", getMouseXY)
+      mouseX = 0
+      mouseY = 0
+                  
+      // Main function to retrieve mouse x-y pos.s
+      function getMouseXY(e) {
+         mouseX = e.pageX
+         mouseY = e.pageY
+
+         mouseX = mouseX - canvas.offsetLeft;
+         mouseY = mouseY - canvas.offsetTop;
+                                
+         if (mouseX < 0){mouseX = 0}
+         if (mouseY < 0){mouseY = 0}
+                                
+         return true
+      }
+
+
+    </script>
+    <script type ="text/javascript">game(2)</script>
+
+
+  </body>
+
+</html> 
