@@ -2,7 +2,9 @@
 
 A program to train a simple neural net for the Tiger player of the boad game Baghchal.
 
-The neural net training is implemented using `PyTorch`. A simple GUI is implement to play the game using `PySide6`. Trained models can be saved as `onnx` models using [torch.onnx](https://pytorch.org/docs/stable/onnx.html) and loaded using onnx web runtime to run the models on web applications. 
+The neural net training is implemented using `PyTorch`. A simple GUI is implement to play the game using `PySide6`. 
+
+Trained models can be saved as `onnx` models using [torch.onnx](https://pytorch.org/docs/stable/onnx.html) and loaded using onnx web runtime to run the models on web applications. One such saved model is deployed using onnx web runtime at https://sarojadhikari.github.io/TigerNet/. 
 
 ## Dependencies
 * [PySide6](https://wiki.qt.io/Qt_for_Python), for GUI
