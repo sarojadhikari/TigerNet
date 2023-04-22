@@ -90,9 +90,25 @@ async function tigernetPlayer() {
 		}
 	}
 
-	tiger = 1+Math.floor(maxind/25);
-	r2 = Math.floor((maxind-(tiger-1)*25)/5);
-	c2 = (maxind%25)%5;
+	// get the index based on probability as weights (for randomness)
+
+	const cumWeights = [];
+	for (i=0; i<ind; ++i) {
+		cumWeights[i] = probs[i] + (cumWeights[i-1] || 0);
+	}
+
+	const randomIndex = Math.random() * cumWeights[ind-1];
+
+	for (i=0; i < ind; ++i) {
+		if (cumWeights[i] >= randomIndex) {
+			index = i;
+			break;
+		}
+	}
+
+	tiger = 1+Math.floor(index/25);
+	r2 = Math.floor((index-(tiger-1)*25)/5);
+	c2 = (index%25)%5;
 	[r1,c1] = tigers[tiger];
 
 	// make the move/jump and update the board
