@@ -8,3 +8,6 @@ __pychace__/
 *.so
 *~
 .cache
+venv/
+.idea/
+docs/.idea/
