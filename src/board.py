@@ -1,4 +1,5 @@
 from PySide6.QtCore import Qt, QRect, Slot, Signal
+from PySide6.QtCore import QThreadPool, QRunnable
 
 from PySide6.QtWidgets import QWidget
 from PySide6.QtGui import QPalette, QColor, QPainter, QMouseEvent
@@ -12,6 +13,8 @@ import torch.optim as optim
 
 set_num_threads(5)
 net = TigerNet().to("cpu")
+
+global optimizer
 
 def small_lr():
     global optimizer
@@ -37,6 +40,8 @@ class Board(QWidget):
         self._nrandom = 0
 
         self.game = Baghchal()
+        self.pool = QThreadPool()
+
         self.saved_move_probs = []
         self.saved_goats_eaten_or_not = []
         self.current_game_move_probs = []
@@ -72,43 +77,12 @@ class Board(QWidget):
 
     def train(self):
         self._nrandom = self._nrandom + self._eps
-        for eps in range(self._eps):
 
-            net.train()
-            winners = []
-            episodes = []
-            geatens = []
-            games = 50
+        thread = TrainThread(50, self._eps)
+        self.pool.start(thread)
 
-            for game_index in range(games):
-                winner, move_probs, geaten = self.play_against_random()
-                winners.append(winner)
-                episodes.append(move_probs)
-                geatens.append(geaten)
-
-            net.zero_grad()
-            total_loss = 0.0
-
-            for geatens, move_probs in zip(geatens, episodes):
-                total_goats_eaten = sum(geatens)
-                for move_prob, geaten in zip(move_probs, geatens):
-                    prob = move_prob
-
-                    if (geaten != 1):
-                        prob = 1 - prob
-
-                    if (prob < 0.01):
-                        prob = prob + 0.01
-
-                    loss = -prob.log() - total_goats_eaten / games
-                    loss.backward()
-
-                    total_loss += loss.detach().to("cpu")
-
-            optimizer.step()
-            self.newgame()
-            print (winners.count(0), winners.count(1), total_loss)
-        return winners, total_loss
+        #self.newgame()
+        return 1
 
     def train_with_saved_games(self):
         net.train()
@@ -138,43 +112,7 @@ class Board(QWidget):
 
         return 1
 
-    def play_against_random(self):
-        """play a game against random goat moves
-        """
-        self.newgame()
-        move_probs = []
-        goat_eaten_or_not = []
-        MAX_STEPS = 25
-        steps = 0
-        winner = 0
-        last_goats_eaten = 0
 
-        while (winner == 0 and steps < MAX_STEPS):
-            steps = steps + 1
-            if (self.game.turn == -1):
-                move = randomplayerGoat(self.game)
-                if not(move):
-                    print (self.game.board)
-                    winner = 1
-                    break
-                self.game.movegoat(move[0], move[1], move[2], move[3])
-                winner = self.game.checkwinner
-            else:
-                move, move_prob = tigernetPlayer(self.game, net)
-                self.game.movetiger(move[0], move[1], move[2])
-                move_probs.append(move_prob)
-
-                if (self.game.goats_eaten>last_goats_eaten):
-                    goat_eaten_or_not.append(1)
-                    last_goats_eaten = self.game.goats_eaten
-                else:
-                    goat_eaten_or_not.append(0)
-
-            winner = self.game.checkwinner
-            current_turn = self.game.turn
-            self.game.turn = -current_turn
-
-        return winner, move_probs, goat_eaten_or_not
 
     @Slot(int)
     def set_expisodes(self, w):
@@ -300,8 +238,92 @@ class Board(QWidget):
             painter.drawText(50, 5, 250, 50, 0, info)
 
 
+class TrainThread(QRunnable):
 
+    def __init__(self, games, episodes):
+        super(TrainThread, self).__init__()
+        self.games = games
+        self.episodes = episodes
 
+    def run(self):
+        """
+        train using random games here
+        """
+
+        for eps in range(self.episodes):
+
+            net.train()
+            winners = []
+            episodes = []
+            geatens = []
+            games = 50
+
+            for game_index in range(self.games):
+                winner, move_probs, geaten = self.play_against_random()
+                winners.append(winner)
+                episodes.append(move_probs)
+                geatens.append(geaten)
+
+            net.zero_grad()
+            total_loss = 0.0
+
+            for geatens, move_probs in zip(geatens, episodes):
+                total_goats_eaten = sum(geatens)
+                for move_prob, geaten in zip(move_probs, geatens):
+                    prob = move_prob
+
+                    if (geaten != 1):
+                        prob = 1 - prob
+
+                    if (prob < 0.01):
+                        prob = prob + 0.01
+
+                    loss = -prob.log() - total_goats_eaten / games
+                    loss.backward()
+
+                    total_loss += loss.detach().to("cpu")
+
+            optimizer.step()
+            print (winners.count(0), winners.count(1), total_loss)
+        return winners, total_loss
+
+    def play_against_random(self):
+        """play a game against random goat moves
+        """
+        self.game = Baghchal()
+        move_probs = []
+        goat_eaten_or_not = []
+        MAX_STEPS = 25
+        steps = 0
+        winner = 0
+        last_goats_eaten = 0
+
+        while (winner == 0 and steps < MAX_STEPS):
+            steps = steps + 1
+            if (self.game.turn == -1):
+                move = randomplayerGoat(self.game)
+                if not(move):
+                    print (self.game.board)
+                    winner = 1
+                    break
+                self.game.movegoat(move[0], move[1], move[2], move[3])
+                winner = self.game.checkwinner
+            else:
+                move, move_prob = tigernetPlayer(self.game, net)
+                self.game.movetiger(move[0], move[1], move[2])
+                move_probs.append(move_prob)
+
+                if (self.game.goats_eaten>last_goats_eaten):
+                    goat_eaten_or_not.append(1)
+                    last_goats_eaten = self.game.goats_eaten
+                else:
+                    goat_eaten_or_not.append(0)
+
+            winner = self.game.checkwinner
+            current_turn = self.game.turn
+            self.game.turn = -current_turn
+
+        return winner, move_probs, goat_eaten_or_not
 
 
 
