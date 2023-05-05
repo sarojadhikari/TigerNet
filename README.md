@@ -17,8 +17,7 @@ A screenshot of TigerNet GUI is given below. Red circles are Tiger players (whic
 
 ![Screenshot of TigerNet GUI](tigernet.png)
 
-The first 20 moves of the goat player are placing pieces on  
-empty locations on the board. A tiger pice (red) can jump over a goat 
+The first 20 moves of the goat player are placing pieces on empty locations on the board. A tiger pice (red) can jump over a goat 
 piece (blue) to an empty board location along a board line and kill the 
 goat. The goat player wins if all the valid movements of the tiger player 
 are blocked.
